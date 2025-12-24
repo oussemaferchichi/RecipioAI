@@ -7,12 +7,14 @@ import Dashboard from './pages/Dashboard'
 import CreateRecipe from './pages/CreateRecipe'
 import EditRecipe from './pages/EditRecipe'
 import RecipeDetail from './pages/RecipeDetail'
+import GenerateRecipe from './pages/GenerateRecipe'
 import Profile from './pages/Profile'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
     return (
         <AuthProvider>
+            <div className="mesh-bg"></div>
             <Router>
                 <Routes>
                     <Route path="/" element={<Home />} />
@@ -43,6 +45,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <EditRecipe />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/generate-recipe"
+                        element={
+                            <ProtectedRoute>
+                                <GenerateRecipe />
                             </ProtectedRoute>
                         }
                     />

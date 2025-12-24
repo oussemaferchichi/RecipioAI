@@ -28,6 +28,13 @@ class Recipe(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def rating_avg(self):
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0
+        return sum(r.score for r in ratings) / len(ratings)
+
     def __str__(self):
         return self.title
 

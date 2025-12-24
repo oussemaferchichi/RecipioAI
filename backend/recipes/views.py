@@ -10,7 +10,7 @@ from django.dispatch import receiver
 from .models import Recipe, Profile, Ingredient, Rating, Favorite
 from .serializers import RecipeSerializer, ProfileSerializer, IngredientSerializer, RatingSerializer
 from .auth_serializers import RegisterSerializer, LoginSerializer, UserSerializer
-from .ai_utils import get_ingredient_substitute
+from .ai_utils import get_ingredient_substitute, generate_recipe_from_ingredients
 import django_filters.rest_framework
 import json
 
@@ -50,7 +50,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def toggle_favorite(self, request, pk=None):
         recipe = self.get_object()
         user = request.user
@@ -62,7 +62,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         
         return Response({'is_favorited': True})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def rate(self, request, pk=None):
         recipe = self.get_object()
         user = request.user
@@ -173,3 +173,34 @@ def login(request):
 @permission_classes([IsAuthenticated])
 def get_current_user(request):
     return Response(UserSerializer(request.user).data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_recipe(request):
+    """
+    Generate a complete recipe from ingredients using AI.
+    Expects: {"ingredients": "flour, eggs, sugar, butter"}
+    """
+    ingredients_text = request.data.get('ingredients')
+    
+    if not ingredients_text:
+        return Response({"error": "Ingredients are required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Get user's profile for dietary preferences
+        profile = Profile.objects.filter(user=request.user).first()
+        restrictions = ", ".join(profile.dietary_restrictions) if profile and profile.dietary_restrictions else ""
+        allergies = ", ".join(profile.allergies) if profile and profile.allergies else ""
+        
+        # Generate recipe using AI
+        recipe_data = generate_recipe_from_ingredients(ingredients_text, restrictions, allergies)
+        
+        # Check if there was an error in AI response
+        if "error" in recipe_data:
+            return Response(recipe_data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response(recipe_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

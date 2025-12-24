@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Clock, Users, Sparkles, Edit, Trash2, Heart, Star } from 'lucide-react'
+import { Clock, Users, Sparkles, Edit, Trash2, Heart, Star, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import ConfirmDialog from './ConfirmDialog'
 
 const RecipeCard = ({ recipe: initialRecipe, onSubstitute }) => {
     const { user } = useAuth()
@@ -12,10 +14,13 @@ const RecipeCard = ({ recipe: initialRecipe, onSubstitute }) => {
     const [isHoveringHeart, setIsHoveringHeart] = useState(false)
     const [hoverRating, setHoverRating] = useState(0)
     const [imageError, setImageError] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     const isOwner = user && recipe.author && user.id === recipe.author.id
 
-    const handleSwap = async (ingredient) => {
+    const handleSwap = async (e, ingredient) => {
+        e.preventDefault()
+        e.stopPropagation()
         setIsSubstituting(true)
         setSelectedIngredient(ingredient)
 
@@ -29,31 +34,30 @@ const RecipeCard = ({ recipe: initialRecipe, onSubstitute }) => {
             onSubstitute(response.data)
         } catch (error) {
             console.error('Substitution error:', error)
-            alert('Failed to get substitution.')
         } finally {
             setIsSubstituting(false)
         }
     }
 
+    const handleDeleteClick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setShowDeleteConfirm(true)
+    }
+
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this recipe?')) {
-            try {
-                await axios.delete(`http://localhost:8000/api/recipes/${recipe.id}/`)
-                window.location.reload()
-            } catch (error) {
-                console.error('Delete error:', error)
-                const errorMsg = error.response?.data?.detail || 'Failed to delete recipe. You may not have permission.'
-                alert(errorMsg)
-            }
+        try {
+            await axios.delete(`http://localhost:8000/api/recipes/${recipe.id}/`)
+            window.location.reload()
+        } catch (error) {
+            console.error('Delete error:', error)
         }
     }
 
     const handleToggleFavorite = async (e) => {
+        e.preventDefault()
         e.stopPropagation()
-        if (!user) {
-            alert('Please sign in to favorite recipes!')
-            return
-        }
+        if (!user) return
 
         try {
             const response = await axios.post(`http://localhost:8000/api/recipes/${recipe.id}/toggle_favorite/`)
@@ -64,11 +68,9 @@ const RecipeCard = ({ recipe: initialRecipe, onSubstitute }) => {
     }
 
     const handleRate = async (e, score) => {
+        e.preventDefault()
         e.stopPropagation()
-        if (!user) {
-            alert('Please sign in to rate recipes!')
-            return
-        }
+        if (!user) return
 
         try {
             const response = await axios.post(`http://localhost:8000/api/recipes/${recipe.id}/rate/`, { score })
@@ -78,187 +80,144 @@ const RecipeCard = ({ recipe: initialRecipe, onSubstitute }) => {
         }
     }
 
-    const cardStyle = {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '1rem',
-        padding: '1.5rem',
-        transition: 'all 0.3s',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%'
-    }
-
-    const imageStyle = {
-        width: '100%',
-        height: '200px',
-        objectFit: 'cover',
-        borderRadius: '0.75rem',
-        marginBottom: '1rem'
-    }
-
-    const titleStyle = {
-        fontSize: '1.5rem',
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: '0.5rem'
-    }
-
-    const descStyle = {
-        color: 'rgba(255, 255, 255, 0.7)',
-        marginBottom: '1rem',
-        fontSize: '0.875rem'
-    }
-
-    const actionButtonStyle = {
-        background: 'none',
-        border: 'none',
-        color: 'rgba(255, 255, 255, 0.6)',
-        cursor: 'pointer',
-        padding: '0.25rem',
-        transition: 'all 0.2s',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-    }
-
-    const tagStyle = {
-        backgroundColor: 'rgba(249, 115, 22, 0.2)',
-        color: '#F97316',
-        padding: '0.25rem 0.75rem',
-        borderRadius: '9999px',
-        fontSize: '0.75rem'
-    }
-
-    const swapButtonStyle = {
-        backgroundColor: '#F97316',
-        color: 'white',
-        border: 'none',
-        padding: '0.375rem 0.75rem',
-        borderRadius: '0.5rem',
-        fontSize: '0.75rem',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.25rem',
-        transition: 'all 0.2s'
-    }
-
     return (
-        <div style={cardStyle}>
-            {(recipe.image || recipe.image_url) && !imageError && (
-                <img
-                    src={recipe.image ? `http://localhost:8000${recipe.image}` : recipe.image_url}
-                    alt={recipe.title}
-                    style={imageStyle}
-                    onError={() => setImageError(true)}
-                />
-            )}
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -8 }}
+            className="glass-card flex flex-col h-full overflow-hidden group rounded-2xl"
+        >
+            {/* Image Section */}
+            <div className="relative h-56 overflow-hidden">
+                <Link to={`/recipes/${recipe.id}`}>
+                    <img
+                        src={recipe.image ? `http://localhost:8000${recipe.image}` : (recipe.image_url || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&q=80&w=800')}
+                        alt={recipe.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&q=80&w=800' }}
+                    />
+                </Link>
 
-            <div style={{ position: 'absolute', top: '2rem', right: '2rem', display: 'flex', gap: '0.5rem' }}>
+                {/* Floating Badges */}
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                    {recipe.category && (
+                        <span className="px-3 py-1 text-xs font-semibold glass text-orange-400 rounded-full">
+                            {recipe.category}
+                        </span>
+                    )}
+                </div>
+
+                {/* Favorite Button Overlay */}
                 <button
                     onClick={handleToggleFavorite}
                     onMouseEnter={() => setIsHoveringHeart(true)}
                     onMouseLeave={() => setIsHoveringHeart(false)}
-                    style={{
-                        ...actionButtonStyle,
-                        backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                        borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
-                        color: (recipe.is_favorited || isHoveringHeart) ? '#EF4444' : 'white'
-                    }}
+                    className={`absolute top-4 right-4 p-2 rounded-full glass transition-all ${recipe.is_favorited ? 'text-red-500' : 'text-white'
+                        }`}
                 >
-                    <Heart size={20} fill={(recipe.is_favorited || isHoveringHeart) ? '#EF4444' : 'none'} />
+                    <Heart size={20} fill={recipe.is_favorited || isHoveringHeart ? "currentColor" : "none"} />
                 </button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Link to={`/recipes/${recipe.id}`} style={{ textDecoration: 'none' }}>
-                    <h3 style={titleStyle}>{recipe.title}</h3>
-                </Link>
-                {isOwner && (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <Link to={`/recipes/${recipe.id}/edit`} style={{ ...actionButtonStyle, color: '#F97316' }}>
-                            <Edit size={18} />
-                        </Link>
-                        <button onClick={handleDelete} style={{ ...actionButtonStyle, color: '#EF4444' }}>
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            <p style={descStyle}>{recipe.description}</p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                        <button
-                            key={star}
-                            onClick={(e) => handleRate(e, star)}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            style={{ ...actionButtonStyle, padding: '1px' }}
-                        >
-                            <Star
-                                size={16}
-                                color={(hoverRating || recipe.user_rating) >= star ? '#FBBF24' : 'rgba(255, 255, 255, 0.2)'}
-                                fill={(hoverRating || recipe.user_rating) >= star ? '#FBBF24' : 'none'}
-                            />
-                        </button>
-                    ))}
-                    <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginLeft: '0.5rem' }}>
-                        ({recipe.rating_avg?.toFixed(1) || '0.0'})
-                    </span>
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
-                    <Clock size={16} />
-                    <span>{recipe.prep_time + recipe.cook_time}m</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
-                    <Users size={16} />
-                    <span>{recipe.servings} ser.</span>
-                </div>
-            </div>
-
-            {recipe.tags && (
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                    {recipe.tags.map((tag, idx) => (
-                        <span key={idx} style={tagStyle}>{tag}</span>
-                    ))}
-                </div>
-            )}
-
-            <div style={{ marginTop: 'auto' }}>
-                <div style={{ color: '#F97316', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.75rem' }}>Ingredients:</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recipe.ingredients?.slice(0, 3).map((ing, idx) => (
-                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem' }}>
-                            <span style={{ fontSize: '0.875rem', color: 'white' }}>{ing.name}</span>
-                            <button
-                                style={swapButtonStyle}
-                                onClick={(e) => { e.stopPropagation(); handleSwap(ing); }}
-                                disabled={isSubstituting}
-                            >
-                                <Sparkles size={12} />
-                                {isSubstituting && selectedIngredient?.id === ing.id ? '...' : 'SWAP'}
+            {/* Content Section */}
+            <div className="p-6 flex flex-col flex-1">
+                <div className="flex justify-between items-start mb-2">
+                    <Link to={`/recipes/${recipe.id}`} className="hover:text-orange-500 transition-colors">
+                        <h3 className="text-xl font-bold leading-tight line-clamp-1">{recipe.title}</h3>
+                    </Link>
+                    {isOwner && (
+                        <div className="flex gap-1">
+                            <Link to={`/recipes/${recipe.id}/edit`} className="p-1.5 text-orange-400 hover:text-orange-300 glass rounded-lg transition-colors">
+                                <Edit size={16} />
+                            </Link>
+                            <button onClick={handleDeleteClick} className="p-1.5 text-red-400 hover:text-red-300 glass rounded-lg transition-colors">
+                                <Trash2 size={16} />
                             </button>
-                        </div>
-                    ))}
-                    {recipe.ingredients?.length > 3 && (
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center' }}>
-                            + {recipe.ingredients.length - 3} more ingredients
                         </div>
                     )}
                 </div>
+
+                <p className="text-gray-400 text-sm line-clamp-2 mb-4 flex-1">
+                    {recipe.description}
+                </p>
+
+                {/* Meta Info */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="flex items-center gap-2 text-gray-300 text-sm glass px-3 py-2 rounded-xl">
+                        <Clock size={16} className="text-orange-500" />
+                        <span>{recipe.prep_time + recipe.cook_time}m</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-300 text-sm glass px-3 py-2 rounded-xl">
+                        <Users size={16} className="text-orange-500" />
+                        <span>{recipe.servings} Serv.</span>
+                    </div>
+                </div>
+
+                {/* Rating Section */}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                                key={star}
+                                onClick={(e) => handleRate(e, star)}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                                className="transition-transform hover:scale-125 focus:outline-none"
+                            >
+                                <Star
+                                    size={16}
+                                    className={`${(hoverRating || recipe.user_rating || recipe.rating_avg) >= star
+                                        ? 'text-yellow-400 fill-yellow-400'
+                                        : 'text-gray-600'
+                                        }`}
+                                />
+                            </button>
+                        ))}
+                        <span className="text-xs text-gray-400 ml-2">
+                            ({recipe.rating_avg?.toFixed(1) || '0.0'})
+                        </span>
+                    </div>
+                </div>
+
+                {/* AI Swap Snippet */}
+                <div className="space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-orange-500/80">Ingredients</span>
+                    <div className="space-y-1.5">
+                        {recipe.ingredients?.slice(0, 2).map((ing, idx) => (
+                            <div key={idx} className="flex justify-between items-center group/ing">
+                                <span className="text-sm text-gray-300">{ing.name}</span>
+                                <button
+                                    onClick={(e) => handleSwap(e, ing)}
+                                    disabled={isSubstituting}
+                                    className="p-1.5 glass text-orange-400 hover:text-orange-300 rounded-lg transition-all opacity-0 group-hover/ing:opacity-100"
+                                >
+                                    <Sparkles size={14} className={isSubstituting && selectedIngredient?.id === ing.id ? "animate-pulse" : ""} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Link
+                    to={`/recipes/${recipe.id}`}
+                    className="mt-6 flex items-center justify-center gap-2 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                >
+                    View Recipe <ArrowRight size={18} />
+                </Link>
             </div>
-        </div>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDelete}
+                title="Delete Recipe?"
+                message="Are you sure you want to delete this recipe? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
+        </motion.div>
     )
 }
 

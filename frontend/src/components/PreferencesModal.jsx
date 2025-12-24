@@ -1,170 +1,155 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Save, ChefHat, Settings, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import axios from 'axios'
 
 const PreferencesModal = ({ isOpen, onClose, user, onUpdate }) => {
-    const [restrictions, setRestrictions] = useState(user?.dietary_restrictions || [])
+    const [dietaryRestrictions, setDietaryRestrictions] = useState(user?.dietary_restrictions || [])
     const [allergies, setAllergies] = useState(user?.allergies || [])
-    const [newRestriction, setNewRestriction] = useState('')
-    const [newAllergy, setNewAllergy] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [message, setMessage] = useState('')
 
-    if (!isOpen) return null
+    const diets = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Keto', 'Paleo', 'Dairy-Free']
+    const commonAllergies = ['Peanuts', 'Tree Nuts', 'Soy', 'Wheat', 'Shellfish', 'Eggs', 'Milk']
+
+    const handleToggle = (item, list, setList) => {
+        if (list.includes(item)) {
+            setList(list.filter(i => i !== item))
+        } else {
+            setList([...list, item])
+        }
+        setMessage('')
+    }
 
     const handleSave = async () => {
-        setLoading(true)
+        setSaving(true)
         try {
-            const response = await axios.put('http://localhost:8000/api/profiles/me/', {
-                dietary_restrictions: restrictions,
+            const response = await axios.patch('http://localhost:8000/api/profiles/me/', {
+                dietary_restrictions: dietaryRestrictions,
                 allergies: allergies
             })
             onUpdate(response.data)
-            onClose()
+            setMessage('Preferences saved successfully!')
+            setTimeout(() => {
+                setMessage('')
+                onClose()
+            }, 1000)
         } catch (error) {
-            console.error('Failed to update profile:', error)
+            console.error('Failed to save preferences:', error)
+            setMessage('Failed to save preferences.')
         } finally {
-            setLoading(false)
+            setSaving(false)
         }
     }
 
-    const addRestriction = () => {
-        if (newRestriction && !restrictions.includes(newRestriction)) {
-            setRestrictions([...restrictions, newRestriction])
-            setNewRestriction('')
-        }
-    }
-
-    const removeRestriction = (item) => {
-        setRestrictions(restrictions.filter(r => r !== item))
-    }
-
-    const addAllergy = () => {
-        if (newAllergy && !allergies.includes(newAllergy)) {
-            setAllergies([...allergies, newAllergy])
-            setNewAllergy('')
-        }
-    }
-
-    const removeAllergy = (item) => {
-        setAllergies(allergies.filter(a => a !== item))
-    }
-
-    const overlayStyle = {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000
-    }
-
-    const contentStyle = {
-        backgroundColor: '#1E293B',
-        padding: '2rem',
-        borderRadius: '1rem',
-        maxWidth: '500px',
-        width: '90%',
-        color: 'white',
-        maxHeight: '80vh',
-        overflowY: 'auto'
-    }
-
-    const tagStyle = {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.25rem 0.75rem',
-        backgroundColor: 'rgba(249, 115, 22, 0.2)',
-        color: '#F97316',
-        borderRadius: '1rem',
-        fontSize: '0.875rem',
-        marginRight: '0.5rem',
-        marginBottom: '0.5rem'
-    }
-
-    const inputGroupStyle = {
-        display: 'flex',
-        gap: '0.5rem',
-        marginBottom: '1rem'
-    }
-
-    const inputStyle = {
-        flex: 1,
-        padding: '0.75rem',
-        borderRadius: '0.5rem',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        color: 'white'
-    }
-
-    const buttonStyle = {
-        padding: '0.75rem 1rem',
-        borderRadius: '0.5rem',
-        border: 'none',
-        backgroundColor: '#F97316',
-        color: 'white',
-        cursor: 'pointer',
-        fontWeight: 'bold'
-    }
+    if (!isOpen) return null
 
     return (
-        <div style={overlayStyle}>
-            <div style={contentStyle}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Personal Preferences</h2>
+        <AnimatePresence>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                />
 
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '0.5rem' }}>Dietary Restrictions</h3>
-                    <div style={{ marginBottom: '1rem' }}>
-                        {restrictions.map(r => (
-                            <span key={r} style={tagStyle}>
-                                {r}
-                                <button onClick={() => removeRestriction(r)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>×</button>
-                            </span>
-                        ))}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative w-full max-w-2xl glass border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="relative h-24 bg-gradient-to-r from-orange-500/10 to-transparent flex items-center px-8">
+                        <div className="bg-orange-500/20 p-3 rounded-2xl text-orange-500 mr-4">
+                            <Settings size={28} />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter text-shadow-glow">Kitchen Preferences</h2>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Personalize your AI results</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="ml-auto p-2 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-all"
+                        >
+                            <X size={24} />
+                        </button>
                     </div>
-                    <div style={inputGroupStyle}>
-                        <input
-                            value={newRestriction}
-                            onChange={(e) => setNewRestriction(e.target.value)}
-                            placeholder="e.g. Vegetarian, Gluten-Free"
-                            style={inputStyle}
-                        />
-                        <button onClick={addRestriction} style={buttonStyle}>Add</button>
-                    </div>
-                </div>
 
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '0.5rem' }}>Allergies</h3>
-                    <div style={{ marginBottom: '1rem' }}>
-                        {allergies.map(a => (
-                            <span key={a} style={tagStyle}>
-                                {a}
-                                <button onClick={() => removeAllergy(a)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>×</button>
-                            </span>
-                        ))}
-                    </div>
-                    <div style={inputGroupStyle}>
-                        <input
-                            value={newAllergy}
-                            onChange={(e) => setNewAllergy(e.target.value)}
-                            placeholder="e.g. Peanuts, Shellfish"
-                            style={inputStyle}
-                        />
-                        <button onClick={addAllergy} style={buttonStyle}>Add</button>
-                    </div>
-                </div>
+                    <div className="p-8 space-y-8">
+                        {/* Dietary Restrictions */}
+                        <div>
+                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <ChefHat size={16} className="text-orange-500" />
+                                Dietary Profile
+                            </h3>
+                            <div className="flex flex-wrap gap-3">
+                                {diets.map(diet => (
+                                    <button
+                                        key={diet}
+                                        onClick={() => handleToggle(diet, dietaryRestrictions, setDietaryRestrictions)}
+                                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${dietaryRestrictions.includes(diet)
+                                                ? 'bg-orange-500/10 border-orange-500 text-orange-500 shadow-lg shadow-orange-500/20'
+                                                : 'glass border-white/5 text-gray-400 hover:border-white/20'
+                                            }`}
+                                    >
+                                        {diet}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                    <button onClick={onClose} style={{ ...buttonStyle, backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}>Cancel</button>
-                    <button onClick={handleSave} style={buttonStyle} disabled={loading}>
-                        {loading ? 'Saving...' : 'Save Preferences'}
-                    </button>
-                </div>
+                        {/* Allergies */}
+                        <div>
+                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <AlertTriangle size={16} className="text-red-500" />
+                                Allergen Warnings
+                            </h3>
+                            <div className="flex flex-wrap gap-3">
+                                {commonAllergies.map(allergy => (
+                                    <button
+                                        key={allergy}
+                                        onClick={() => handleToggle(allergy, allergies, setAllergies)}
+                                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${allergies.includes(allergy)
+                                                ? 'bg-red-500/10 border-red-500 text-red-500 shadow-lg shadow-red-500/20'
+                                                : 'glass border-white/5 text-gray-400 hover:border-white/20'
+                                            }`}
+                                    >
+                                        {allergy}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex items-center justify-between gap-4">
+                            <div className="flex-1">
+                                {message && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className={`flex items-center gap-2 text-sm font-bold ${message.includes('success') ? 'text-green-400' : 'text-red-400'}`}
+                                    >
+                                        {message.includes('success') ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                                        {message}
+                                    </motion.div>
+                                )}
+                            </div>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-orange-500/20 flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                            >
+                                <Save size={20} />
+                                {saving ? 'SAVING...' : 'SAVE CHANGES'}
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
-        </div>
+        </AnimatePresence>
     )
 }
 

@@ -14,6 +14,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'password', 'name']
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("user with this email already exists.")
+        return value
     
     def create(self, validated_data):
         name = validated_data.pop('name', '')

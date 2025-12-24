@@ -66,7 +66,9 @@ def test_full_flow():
             
             # Verify image is accessible
             if recipe['image']:
-                img_url = f"http://localhost:8000{recipe['image']}"
+                img_url = recipe['image']
+                if not img_url.startswith('http'):
+                    img_url = f"http://localhost:8000{img_url}"
                 img_resp = requests.get(img_url)
                 if img_resp.status_code == 200:
                     print(f"   Image is accessible at {img_url}")

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { PlusCircle, Heart, Star, LogOut, Search, Settings } from 'lucide-react'
+import { PlusCircle, Heart, Star, LogOut, Search, Settings, Utensils, Award, ChefHat, Flame } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import RecipeCard from '../components/RecipeCard'
 import SubstitutionModal from '../components/SubstitutionModal'
 import PreferencesModal from '../components/PreferencesModal'
@@ -51,250 +52,157 @@ const Dashboard = () => {
     }
 
     const handleProfileUpdate = (updatedProfile) => {
-        // Update AuthContext user with new profile data
         updateProfile(updatedProfile)
-    }
-
-    const containerStyle = {
-        minHeight: '100vh',
-        backgroundColor: '#0F172A',
-        color: 'white',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
-    }
-
-    const navStyle = {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '1.5rem 2rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        backgroundColor: 'rgba(255, 255, 255, 0.02)'
-    }
-
-    const logoStyle = {
-        fontSize: '1.75rem',
-        fontWeight: 'bold',
-        color: '#F97316',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        textDecoration: 'none'
-    }
-
-    const userButtonStyle = {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem'
-    }
-
-    const iconButtonStyle = {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem 1rem',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '0.5rem',
-        color: 'white',
-        cursor: 'pointer',
-        fontSize: '0.875rem'
-    }
-
-    const signOutButtonStyle = {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem 1rem',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        border: '1px solid rgba(239, 68, 68, 0.3)',
-        borderRadius: '0.5rem',
-        color: '#FCA5A5',
-        cursor: 'pointer',
-        fontSize: '0.875rem'
-    }
-
-    const contentStyle = {
-        padding: '3rem 2rem',
-        maxWidth: '1200px',
-        margin: '0 auto'
-    }
-
-    const welcomeStyle = {
-        fontSize: '2.5rem',
-        fontWeight: 'bold',
-        marginBottom: '0.5rem'
-    }
-
-    const emailStyle = {
-        color: 'rgba(255, 255, 255, 0.6)',
-        marginBottom: '3rem'
-    }
-
-    const statsGridStyle = {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '3rem'
-    }
-
-    const statCardStyle = {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '1rem',
-        padding: '1.5rem'
-    }
-
-    const statLabelStyle = {
-        color: 'rgba(255, 255, 255, 0.6)',
-        fontSize: '0.875rem',
-        marginBottom: '0.5rem'
-    }
-
-    const statValueStyle = {
-        fontSize: '2rem',
-        fontWeight: 'bold',
-        color: '#F97316'
-    }
-
-    const sectionTitleStyle = {
-        fontSize: '1.5rem',
-        fontWeight: 'bold',
-        marginBottom: '1.5rem'
-    }
-
-    const tabsContainerStyle = {
-        display: 'flex',
-        gap: '1rem',
-        marginBottom: '2rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        paddingBottom: '1rem'
-    }
-
-    const tabStyle = (isActive) => ({
-        padding: '0.5rem 1rem',
-        background: 'none',
-        border: 'none',
-        borderBottom: isActive ? '2px solid #F97316' : '2px solid transparent',
-        color: isActive ? '#F97316' : 'rgba(255, 255, 255, 0.6)',
-        cursor: 'pointer',
-        fontSize: '1.125rem',
-        fontWeight: isActive ? 'bold' : 'normal',
-        transition: 'all 0.2s'
-    })
-
-    const emptyStateStyle = {
-        textAlign: 'center',
-        padding: '3rem',
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
-        borderRadius: '1rem',
-        border: '2px dashed rgba(255, 255, 255, 0.1)'
-    }
-
-    const createButtonStyle = {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.75rem 1.5rem',
-        backgroundColor: '#F97316',
-        color: 'white',
-        border: 'none',
-        borderRadius: '0.5rem',
-        cursor: 'pointer',
-        fontWeight: '600',
-        textDecoration: 'none'
-    }
-
-    const recipesGridStyle = {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-        gap: '2rem'
     }
 
     const recipesToShow = activeTab === 'recipes' ? myRecipes : favorites
 
     return (
-        <div style={containerStyle}>
-            <nav style={navStyle}>
-                <Link to="/" style={logoStyle}>
-                    🍽️ RECIPIO AI
+        <div className="relative min-h-screen pb-20">
+            {/* Navigation */}
+            <motion.nav
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="sticky top-0 z-40 glass border-b border-white/10 px-6 py-4 flex justify-between items-center"
+            >
+                <Link to="/" className="flex items-center gap-2 group">
+                    <div className="bg-orange-500 p-2 rounded-xl group-hover:rotate-12 transition-transform">
+                        <Utensils className="text-white" size={24} />
+                    </div>
+                    <span className="text-2xl font-black tracking-tighter text-white">RECIPIO <span className="text-orange-500">AI</span></span>
                 </Link>
-                <div style={userButtonStyle}>
-                    <button onClick={() => setIsPrefsModalOpen(true)} style={iconButtonStyle}>
-                        <Settings size={18} />
+
+                <div className="flex items-center gap-4">
+                    <Link
+                        to="/generate-recipe"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 rounded-xl text-sm font-bold text-white transition-all shadow-lg shadow-orange-500/20"
+                    >
+                        <ChefHat size={18} />
+                        AI Generator
+                    </Link>
+                    <button
+                        onClick={() => setIsPrefsModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-xl text-sm font-bold text-white transition-all"
+                    >
+                        <Settings size={18} className="text-orange-500" />
                         Preferences
                     </button>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                        {user?.email}
-                    </span>
-                    <button onClick={handleSignOut} style={signOutButtonStyle}>
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-sm font-bold text-red-500 transition-all"
+                    >
                         <LogOut size={16} />
                         Sign Out
                     </button>
-                </div>
-            </nav>
-
-            <div style={contentStyle}>
-                <h1 style={welcomeStyle}>Welcome back!</h1>
-                <p style={emailStyle}>Manage your culinary journey.</p>
-
-                <div style={statsGridStyle}>
-                    <div style={statCardStyle}>
-                        <div style={statLabelStyle}>Recipes Created</div>
-                        <div style={statValueStyle}>{myRecipes.length}</div>
-                    </div>
-                    <div style={statCardStyle}>
-                        <div style={statLabelStyle}>Favorites</div>
-                        <div style={statValueStyle}>{favorites.length}</div>
-                    </div>
-                    <div style={statCardStyle}>
-                        <div style={statLabelStyle}>Avg Rating Received</div>
-                        <div style={statValueStyle}>
-                            {myRecipes.length > 0
-                                ? (myRecipes.reduce((acc, curr) => acc + curr.rating_avg, 0) / myRecipes.length).toFixed(1)
-                                : '-'
-                            }
-                        </div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-red-500 flex items-center justify-center font-bold text-white border-2 border-white/20">
+                        {user?.email?.[0].toUpperCase()}
                     </div>
                 </div>
+            </motion.nav>
 
-                <div style={tabsContainerStyle}>
-                    <button
-                        style={tabStyle(activeTab === 'recipes')}
-                        onClick={() => setActiveTab('recipes')}
-                    >
-                        My Recipes
-                    </button>
-                    <button
-                        style={tabStyle(activeTab === 'favorites')}
-                        onClick={() => setActiveTab('favorites')}
-                    >
-                        My Favorites
-                    </button>
-                </div>
+            <div className="w-full flex justify-center px-6 pt-12">
+                <div className="max-w-7xl w-full">
+                    <header className="mb-12">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                        >
+                            <h1 className="text-4xl font-black text-white leading-tight mb-2">
+                                Chef <span className="text-orange-500">{user?.email?.split('@')[0]}</span>'s Kitchen
+                            </h1>
+                            <p className="text-gray-400 font-medium">Manage your culinary masterpieces and favorites.</p>
+                        </motion.div>
+                    </header>
 
-                {loading ? (
-                    <div>Loading...</div>
-                ) : recipesToShow.length > 0 ? (
-                    <div style={recipesGridStyle}>
-                        {recipesToShow.map(recipe => (
-                            <RecipeCard
-                                key={recipe.id}
-                                recipe={recipe}
-                                onSubstitute={handleSubstitute}
-                            />
+                    {/* Stats Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                        {[
+                            { label: 'Recipes Created', value: myRecipes.length, icon: ChefHat, color: 'orange' },
+                            { label: 'Saved Favorites', value: favorites.length, icon: Heart, color: 'red' },
+                            { label: 'Kitchen Impact', value: myRecipes.length > 0 ? (myRecipes.reduce((acc, curr) => acc + curr.rating_avg, 0) / myRecipes.length).toFixed(1) : '-', icon: Flame, color: 'yellow' }
+                        ].map((stat, idx) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="glass-card p-6 rounded-2xl relative overflow-hidden group"
+                            >
+                                <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-${stat.color}-500`}>
+                                    <stat.icon size={80} />
+                                </div>
+                                <div className="relative z-10">
+                                    <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                                    <div className={`text-4xl font-black text-${stat.color}-500`}>{stat.value}</div>
+                                </div>
+                            </motion.div>
                         ))}
                     </div>
-                ) : (
-                    <div style={emptyStateStyle}>
-                        <div style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-                            {activeTab === 'recipes' ? 'No recipes yet' : 'No favorites yet'}
-                        </div>
-                        <Link to={activeTab === 'recipes' ? "/recipes/create" : "/"} style={createButtonStyle}>
-                            {activeTab === 'recipes' ? <><PlusCircle size={20} /> Create Recipe</> : <><Search size={20} /> Browse Recipes</>}
-                        </Link>
+
+                    {/* Tabs */}
+                    <div className="flex gap-4 mb-8 border-b border-white/5 pb-4">
+                        {[
+                            { id: 'recipes', label: 'My Creations', icon: ChefHat },
+                            { id: 'favorites', label: 'My Favorites', icon: Heart }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all relative ${activeTab === tab.id ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                <tab.icon size={20} className={activeTab === tab.id ? 'text-orange-500' : ''} />
+                                {tab.label}
+                                {activeTab === tab.id && (
+                                    <motion.div
+                                        layoutId="activeTab"
+                                        className="absolute bottom-[-17px] left-0 right-0 h-1 bg-orange-500 rounded-full"
+                                    />
+                                )}
+                            </button>
+                        ))}
                     </div>
-                )}
+
+                    {loading ? (
+                        <div className="h-64 flex flex-col items-center justify-center gap-4">
+                            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : (
+                        <div className="min-h-[400px]">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeTab}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                                >
+                                    {recipesToShow.length > 0 ? (
+                                        recipesToShow.map(recipe => (
+                                            <RecipeCard
+                                                key={recipe.id}
+                                                recipe={recipe}
+                                                onSubstitute={handleSubstitute}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full py-20 text-center glass border-2 border-dashed border-white/10 rounded-3xl">
+                                            <div className="text-gray-500 text-lg font-bold mb-6">
+                                                {activeTab === 'recipes' ? "You haven't shared any recipes yet." : "Your favorites list is empty."}
+                                            </div>
+                                            <Link
+                                                to={activeTab === 'recipes' ? "/recipes/create" : "/"}
+                                                className="inline-flex items-center gap-2 px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-orange-500/20"
+                                            >
+                                                {activeTab === 'recipes' ? <><PlusCircle size={20} /> Create Your First Recipe</> : <><Search size={20} /> Discover Recipes</>}
+                                            </Link>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <SubstitutionModal
