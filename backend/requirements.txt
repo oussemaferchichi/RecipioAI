@@ -1,0 +1,8 @@
+django>=3.2
+djangorestframework
+django-filter
+django-cors-headers
+djangorestframework-simplejwt
+python-dotenv
+pillow
+groq
